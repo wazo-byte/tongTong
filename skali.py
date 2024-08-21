@@ -1,141 +1,61 @@
-#driver in this cass is not the driver class that starts the app but the user who is driving the car
-#gonna need to change this class name but fk it
-#maybe add role to user instead of this
-class driver:
-    def __init__ (self, userID, name, carPlate, fuelType):
-        self.userID = userID
-        self.name = name
-        self.carPlate = carPlate
+import googlemaps 
 
-class passenger:
-    def __init__ (self, userID, name):
-        self.userID = userID
-        self.name = name
-#class ride or class trip ?
-class ride:
-    def __init__(self, rideID, driver, passenger, date, time, startP, endP, fare, distance, status):
-        self.rideID = rideID
-        self.driver = driver
-        self.passenger = passenger
-        self.date = date
-        self.time = time
-        self.startP = startP
-        self.endP = endP
-        self.fare = fare
-        self.distance = distance
-        self.status = status
-#only leader can remove or add people
-def addPassenger(userID, name):
-    return passenger(userID, name)
+# API KEY
+API_KEY = ''
 
-def removePassenger(passenger):
-    del passenger
+# Initialize the Google Maps client
+gmaps = googlemaps.Client(key=API_KEY)
 
-#gonna need an admin to monitor if driver or passenger got reported violating any rule or smth
-class fuelType:
-    def __init__(self, fuelType):
-        self.fuelType = fuelType
+# Initialize the startingPoint and endPoint
+origin = 'Taman Shamelin Sky Residency, Kuala Lumpur, Malaysia'
+destination = 'Bukit Bintang, Kuala Lumpur, Malaysia'
 
-        def getFuelType(self):
-            return self.fuelType
-        
-        def setFuelType(self, fuelType):
-            self.fuelType = fuelType
-            fuelType = input("what type of fuel do you use? (RON95, RON97, Diesel) ").strip().upper()
-            return fuelType
-        
+# Get distance matrix from the API
+klicks = gmaps.distance_matrix(origins=origin, destinations=destination, mode='driving')
 
-#fuel price will be a dropdown menu
-class fuelPrice:
-    def __init__(self, fuelPrice, fuelType):
-        self.fuelprice = fuelPrice
-        self.fuelType = fuelType
+# Extract the distance from the API and convert from meters to kilometers
+klicks_m = klicks['rows'][0]['elements'][0]['distance']['value']
+klicks_km = klicks_m / 1000
 
-    def getFuelPrice(self):
-        return self.price
+#return fuel eff in km/l based on car type from review of users
+def getfuelEfficiency(carType):
+    if carType == 'saga':
+        return  14
+    elif carType == 'axia':
+        return 14
+    elif carType == 'myvi':
+        return  14
+    elif carType == 'bezza':
+        return  13
+    else:
+        raise ValueError("Invalid input") 
 
-    def setFuelPrice(self, price):
-        self.price = price
-
-    def calculateFuelPrice(self):
-        if fuelType == "RON95":
-            fuelType = "RON95"
-            fuelPrice = float(2.05)
-            return fuelType, fuelPrice
-        elif fuelType == "RON97":
-            fuelType = "RON97"
-            fuelPrice = float(3.47)
-            return fuelType, fuelPrice
-        elif fuelType == "DIESEL":
-            fuelType = "DIESEL"
-            fuelPrice = float(3.25)
-            return fuelType, fuelPrice
-        else:
-            return "Invalid input"
-        return 0
-
-#google api to take distance between 2 points
-class Distance:
-    def __init__(self, startP, endP):
-        self.startP = startP
-        self.endP = endP
-        self.distance = None
-
-    def calculate_distance(self):
-        # Use Google Maps API or any other method to calculate the distance between startP and endP
-        # Replace the following line with the actual implementation
-        self.distance = 10.5  # Placeholder value for distance
-
-    def get_distance(self):
-        return self.distance
-
-    def set_distance(self, distance):
-        self.distance = distance
-        distance = float(input("what is the distance between the 2 points? in km "))
-
-class tank:
-    def __init__(self, fuelType, fuelPrice, fuelUsed):
-        self.fuelType = fuelType
-        self.fuelPrice = fuelPrice
-        self.fuelUsed = fuelUsed
-        self.tank = None
-
-    def setFuelUsed(self, fuelUsed):
-        self.fuelUsed = fuelUsed
-        fuelUsed=float(input("how much fuel in litre did you use? "))
-        return fuelUsed
-
-    def getFuelUsed(self):
-        return self.fuelUsed
-
-class noUser:
-    def __init__(self, noUser):
-        self.noUser = noUser
-
-    def setNoUser(self, noUser):
-        self.noUser = noUser
-        noUser = int(input("how many people are in the car? "))
-        return noUser
-
-    def getNoUser(self):
-        return self.noUser
-
-#just assuming shit first before getting sort out
-#google api only free  until week 13 after that need to pay up 15 nov || 13
-def calculateFare(distance,fuelPrice,fuelUsed, noUser):
-    fare = distance * fuelPrice * fuelUsed /noUser
-    return fare
+#param:
+#distance_km(float): distance in km for trips
+#fuelPrice(float): price per litre of fuel
+#fuelEfficiency(float): fuel efficiency in km per litre
+#noUser(int): number of users (passengers)
 
 
-#testing only need to scrape this shit and rewrite
-class Drive:
-    def __init__(self, driver):
-        self.driver = driver
+def calculateFare(distance_km, fuelPrice, fuelEfficiency, noUser):
+    # Calculate total fuel used
+    fuel_used = distance_km / fuelEfficiency
+    # Calculate total fare 
+    total_fare = fuel_used * fuelPrice
+    # Calculate fare per user
+    fare_per_user = total_fare / noUser
+    return fare_per_user
 
-    def start_drive(self):
-        print(f"Starting drive with driver: {self.driver.name}")
-
-# Testing the code
+# Test the fare calculation with example values
 if __name__ == "__main__":
-     
-    drive.start_drive()
+    # Example values
+    fuelPrice = 2.05  # Price per litre for RON95
+    noUser = 4  # Number of users (passengers)
+    carType = 'saga'
+
+try:
+    fuelEfficiency = getfuelEfficiency(carType)
+    fare = calculateFare(klicks_km, fuelPrice, fuelEfficiency, noUser)
+    print(f"The calculated fare is: MYR {fare:.2f}"f"for each {noUser} passengers riding "f"{carType}\n from {origin} to {destination}."f" The distance is {klicks_km:.2f} km.")
+except Exception as e:
+    print(e)
